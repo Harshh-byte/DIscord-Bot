@@ -17,10 +17,22 @@ const client = new Client({
 });
 
 client.once("clientReady", () => {
-  console.log(`🚀 Logged in as ${client.user.tag}`);
+  const startupMessages = [
+    `🌌 ${client.user.username} awakened ✨`,
+    `⚡ ${client.user.username} is online! 🔥`,
+    `🤖 ${client.user.username} booted up 🚀`,
+    `🔥 ${client.user.username} is ready to roll ⚡`,
+    `✨ ${client.user.username} has entered the chat 💫`,
+  ];
+
+  const randomMsg =
+    startupMessages[Math.floor(Math.random() * startupMessages.length)];
+
+  console.log(randomMsg);
 });
 
-const conversations = new Map();
+let conversation = [{ role: "system", content: auroraSystemPrompt }];
+const cooldowns = new Map();
 
 async function isDirectToBot(message) {
   if (message.mentions.has(client.user)) return true;
@@ -49,17 +61,27 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!(await isDirectToBot(message))) return;
 
-  message.channel.sendTyping();
-
-  let conversation = conversations.get(message.channel.id);
-  if (!conversation) {
-    conversation = [
-      {
-        role: "system",
-        content: auroraSystemPrompt,
-      },
-    ];
+  if (message.content.toLowerCase() === "!reset") {
+    conversation = [{ role: "system", content: auroraSystemPrompt }];
+    return message.reply("🧹 Memory wiped! Starting fresh ✨");
   }
+
+  const cooldownTime = 5000;
+  const lastUsed = cooldowns.get(message.author.id);
+
+  if (lastUsed && Date.now() - lastUsed < cooldownTime) {
+    const remaining = (
+      (cooldownTime - (Date.now() - lastUsed)) /
+      1000
+    ).toFixed(1);
+    return message.reply(
+      `⏳ Chill! Wait **${remaining}s** before I can talk again.`
+    );
+  }
+
+  cooldowns.set(message.author.id, Date.now());
+
+  message.channel.sendTyping();
 
   conversation.push({
     role: "user",
@@ -75,7 +97,7 @@ client.on("messageCreate", async (message) => {
 
     let text =
       chatCompletion.choices[0].message.content ||
-      "Oops, my brain glitched. Try again?";
+      "Oops, my brain glitched 🤖💥 Try again?";
 
     const reactionMatch = text.match(/:(\w+):/);
     let reaction = null;
@@ -92,7 +114,6 @@ client.on("messageCreate", async (message) => {
     }
 
     conversation.push({ role: "assistant", content: text });
-    conversations.set(message.channel.id, conversation);
 
     await message.reply(text);
 
@@ -103,12 +124,48 @@ client.on("messageCreate", async (message) => {
     if (reaction) {
       try {
         await message.react(reaction.replace(/:/g, ""));
-      } catch {
-      }
+      } catch {}
     }
   } catch (err) {
     console.error("OpenAI API error:", err);
-    await message.reply("Oops, my brain glitched. Try again?");
+
+    const quotaReplies = [
+      "⚡ I’m out of mana… give me a long rest before I can cast again!",
+      "☕ My brain fuel ran out. Buy me a coffee and I’ll be back!",
+      "🙃 Guess what? I talked too much and now I’m broke. See you later.",
+      "😴 I’ve hit my word limit for today. Wake me up when the credits reset.",
+      "🚫 Error 404: Brain juice not found. Try again tomorrow!",
+    ];
+
+    const glitchReplies = [
+      "🤖 Oops, my brain glitched 🤯… wanna try again?",
+      "⚡ System overload ⚠️… rebooting… try again?",
+      "🧠 My brain blue-screened 💀… hit me with that again?",
+      "🙃 Glitch mode activated 🤖✨… send it once more?",
+      "🔄 Oops, brain.exe stopped working 😅… retry?",
+    ];
+
+    const spamReplies = [
+      "🐢 Slow down, speed racer! I can’t keep up 😵",
+      "🚦 Whoa there! One at a time, please 😅",
+      "📵 Too many messages! Let me breathe for a sec 🫁",
+      "🐇 You’re too fast! I’m more of a turtle bot 🐢",
+      "💥 Spam overload detected! Rebooting systems…",
+    ];
+
+    if (err.code === "insufficient_quota") {
+      const funnyReply =
+        quotaReplies[Math.floor(Math.random() * quotaReplies.length)];
+      await message.reply(funnyReply);
+    } else if (err.status === 429) {
+      const funnySpam =
+        spamReplies[Math.floor(Math.random() * spamReplies.length)];
+      await message.reply(funnySpam);
+    } else {
+      const funnyGlitch =
+        glitchReplies[Math.floor(Math.random() * glitchReplies.length)];
+      await message.reply(funnyGlitch);
+    }
   }
 });
 
