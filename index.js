@@ -3,6 +3,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 import fetch from "node-fetch";
 import { GoogleGenAI } from "@google/genai";
 import { finnSystemPrompt } from "./config.js";
+import express from "express";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -160,6 +161,17 @@ client.on("messageCreate", async (message) => {
       );
     }
   }
+});
+
+const app = express();
+const port = process.env.PORT || 10000;
+
+app.get("/", (req, res) => {
+  res.send("Bot is alive!");
+});
+
+app.listen(port, () => {
+  console.log(`Health check server running on port ${port}`);
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
