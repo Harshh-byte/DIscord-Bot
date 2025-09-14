@@ -1,12 +1,11 @@
 import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
-import { OpenAI } from "openai";
 import fetch from "node-fetch";
-import { auroraSystemPrompt } from "./config.js";
+import { GoogleGenAI } from "@google/genai";
+import { finnSystemPrompt } from "./config.js";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize Gemini
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const client = new Client({
   intents: [
@@ -24,14 +23,12 @@ client.once("clientReady", () => {
     `🔥 ${client.user.username} is ready to roll ⚡`,
     `✨ ${client.user.username} has entered the chat 💫`,
   ];
-
   const randomMsg =
     startupMessages[Math.floor(Math.random() * startupMessages.length)];
-
   console.log(randomMsg);
 });
 
-let conversation = [{ role: "system", content: auroraSystemPrompt }];
+let conversation = [{ role: "system", content: finnSystemPrompt }];
 const cooldowns = new Map();
 
 async function isDirectToBot(message) {
@@ -57,12 +54,42 @@ async function getGif(query) {
   }
 }
 
+const apiOverloadReplies = [
+  "😵‍💫 Whoa, the server’s kinda fried right now. Try again in a bit!",
+  "⌛ Patience, fam! The AI is catching its breath. Hit me up soon.",
+  "🔥 The vibe’s too hot to handle. Chill for a sec and retry.",
+  "💨 Finn is on a coffee break. Come back in a couple!",
+  "🚧 Roadblock ahead, but we’ll be cruising shortly. Try again!",
+];
+
+async function generateContentWithRetry(
+  historyString,
+  retries = 3,
+  delay = 1000
+) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: historyString,
+      });
+      return response.text;
+    } catch (err) {
+      if (err.status === 503 && i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delay * 2 ** i));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!(await isDirectToBot(message))) return;
 
   if (message.content.toLowerCase() === "!reset") {
-    conversation = [{ role: "system", content: auroraSystemPrompt }];
+    conversation = [{ role: "system", content: finnSystemPrompt }];
     return message.reply("🧹 Memory wiped! Starting fresh ✨");
   }
 
@@ -70,34 +97,26 @@ client.on("messageCreate", async (message) => {
   const lastUsed = cooldowns.get(message.author.id);
 
   if (lastUsed && Date.now() - lastUsed < cooldownTime) {
-    const remaining = (
-      (cooldownTime - (Date.now() - lastUsed)) /
-      1000
-    ).toFixed(1);
+    const remaining = ((cooldownTime - (Date.now() - lastUsed)) / 1000).toFixed(
+      1
+    );
     return message.reply(
       `⏳ Chill! Wait **${remaining}s** before I can talk again.`
     );
   }
 
   cooldowns.set(message.author.id, Date.now());
-
   message.channel.sendTyping();
 
-  conversation.push({
-    role: "user",
-    content: message.content,
-  });
+  conversation.push({ role: "user", content: message.content });
 
   try {
-    const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: conversation,
-      temperature: 0.8,
-    });
+    const historyString = conversation
+      .map((c) => `${c.role}: ${c.content}`)
+      .join("\n");
+    let text = await generateContentWithRetry(historyString);
 
-    let text =
-      chatCompletion.choices[0].message.content ||
-      "Oops, my brain glitched 🤖💥 Try again?";
+    text = text || "Oops, my brain glitched 🤖💥 Try again?";
 
     const reactionMatch = text.match(/:(\w+):/);
     let reaction = null;
@@ -124,47 +143,22 @@ client.on("messageCreate", async (message) => {
     if (reaction) {
       try {
         await message.react(reaction.replace(/:/g, ""));
-      } catch {}
+      } catch (error) {
+        console.error("Failed to add reaction:", error);
+      }
     }
   } catch (err) {
-    console.error("OpenAI API error:", err);
-
-    const quotaReplies = [
-      "⚡ I’m out of mana… give me a long rest before I can cast again!",
-      "☕ My brain fuel ran out. Buy me a coffee and I’ll be back!",
-      "🙃 Guess what? I talked too much and now I’m broke. See you later.",
-      "😴 I’ve hit my word limit for today. Wake me up when the credits reset.",
-      "🚫 Error 404: Brain juice not found. Try again tomorrow!",
-    ];
-
-    const glitchReplies = [
-      "🤖 Oops, my brain glitched 🤯… wanna try again?",
-      "⚡ System overload ⚠️… rebooting… try again?",
-      "🧠 My brain blue-screened 💀… hit me with that again?",
-      "🙃 Glitch mode activated 🤖✨… send it once more?",
-      "🔄 Oops, brain.exe stopped working 😅… retry?",
-    ];
-
-    const spamReplies = [
-      "🐢 Slow down, speed racer! I can’t keep up 😵",
-      "🚦 Whoa there! One at a time, please 😅",
-      "📵 Too many messages! Let me breathe for a sec 🫁",
-      "🐇 You’re too fast! I’m more of a turtle bot 🐢",
-      "💥 Spam overload detected! Rebooting systems…",
-    ];
-
-    if (err.code === "insufficient_quota") {
-      const funnyReply =
-        quotaReplies[Math.floor(Math.random() * quotaReplies.length)];
-      await message.reply(funnyReply);
-    } else if (err.status === 429) {
-      const funnySpam =
-        spamReplies[Math.floor(Math.random() * spamReplies.length)];
-      await message.reply(funnySpam);
+    console.error("Gemini API error:", err);
+    if (err.status === 503) {
+      const reply =
+        apiOverloadReplies[
+          Math.floor(Math.random() * apiOverloadReplies.length)
+        ];
+      await message.reply(reply);
     } else {
-      const funnyGlitch =
-        glitchReplies[Math.floor(Math.random() * glitchReplies.length)];
-      await message.reply(funnyGlitch);
+      await message.reply(
+        "Sorry, I had an error processing your request. Please try again later."
+      );
     }
   }
 });
