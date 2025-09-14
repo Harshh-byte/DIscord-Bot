@@ -4,7 +4,6 @@ import fetch from "node-fetch";
 import { GoogleGenAI } from "@google/genai";
 import { finnSystemPrompt } from "./config.js";
 
-// Initialize Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const client = new Client({
