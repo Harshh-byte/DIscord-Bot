@@ -29,9 +29,9 @@ client.once("clientReady", () => {
 
    client.user.setPresence({
     activities: [
-      { name: "to the server gossip", type: 2 } // type: 0 = Playing
+      { name: "to the server gossip", type: 2 }
     ],
-    status: "online", // other options: "idle", "dnd", "invisible"
+    status: "online",
   });
 });
 
