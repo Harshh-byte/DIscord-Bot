@@ -26,6 +26,13 @@ client.once("clientReady", () => {
   const randomMsg =
     startupMessages[Math.floor(Math.random() * startupMessages.length)];
   console.log(randomMsg);
+
+   client.user.setPresence({
+    activities: [
+      { name: "to the server gossip", type: 2 } // type: 0 = Playing
+    ],
+    status: "online", // other options: "idle", "dnd", "invisible"
+  });
 });
 
 let conversation = [{ role: "system", content: finnSystemPrompt }];
