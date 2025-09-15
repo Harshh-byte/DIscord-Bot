@@ -176,7 +176,7 @@ client.on("messageCreate", async (message) => {
 });
 
 const app = express();
-const port = process.env.PORT || 10000;
+const port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   res.send(`
@@ -309,15 +309,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Health check server running on port ${port}`);
+  console.log(`Server running on port ${port}.`);
 });
-
-const SELF_URL = process.env.SELF_URL;
-
-setInterval(() => {
-  fetch(SELF_URL)
-    .then(() => console.log("🔄 Keep-alive ping sent"))
-    .catch((err) => console.error("Ping failed:", err));
-}, 5 * 60 * 1000);
 
 client.login(process.env.DISCORD_BOT_TOKEN);
