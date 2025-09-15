@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
 import fetch from "node-fetch";
 import { GoogleGenAI } from "@google/genai";
-import { finnSystemPrompt } from "./config.js";
+import { tarsSystemPrompt } from "./config.js";
 import express from "express";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -29,13 +29,13 @@ client.once("clientReady", () => {
 
    client.user.setPresence({
     activities: [
-      { name: "to the server gossip", type: 2 }
+      { name: "the server gossip", type: 2 }
     ],
     status: "online",
   });
 });
 
-let conversation = [{ role: "system", content: finnSystemPrompt }];
+let conversation = [{ role: "system", content: tarsSystemPrompt }];
 const cooldowns = new Map();
 
 async function isDirectToBot(message) {
@@ -65,7 +65,7 @@ const apiOverloadReplies = [
   "😵‍💫 Whoa, the server’s kinda fried right now. Try again in a bit!",
   "⌛ Patience, fam! The AI is catching its breath. Hit me up soon.",
   "🔥 The vibe’s too hot to handle. Chill for a sec and retry.",
-  "💨 Finn is on a coffee break. Come back in a couple!",
+  "💨 Tars is on a coffee break. Come back in a couple!",
   "🚧 Roadblock ahead, but we’ll be cruising shortly. Try again!",
 ];
 
@@ -96,7 +96,7 @@ client.on("messageCreate", async (message) => {
   if (!(await isDirectToBot(message))) return;
 
   if (message.content.toLowerCase() === "!reset") {
-    conversation = [{ role: "system", content: finnSystemPrompt }];
+    conversation = [{ role: "system", content: tarsSystemPrompt }];
     return message.reply("🧹 Memory wiped! Starting fresh ✨");
   }
 
