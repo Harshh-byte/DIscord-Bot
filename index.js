@@ -182,7 +182,7 @@ const port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   res.send(`
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -197,96 +197,161 @@ app.get("/", (req, res) => {
       type="image/png"
       href="https://img.icons8.com/color/48/grok--v2.png"
     />
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      :root {
-        --primary-color: #38bdf8;
-        --secondary-color: #a855f7;
-        --accent-color: #22c55e;
-        --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        --card-bg: rgba(255, 255, 255, 0.08);
-        --text-color: #e2e8f0;
-        --muted-text: #cbd5e1;
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
       }
       body {
-        margin: 0;
         min-height: 100vh;
-        background: var(--bg-gradient);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: "Inter", sans-serif;
-        color: var(--text-color);
-        overflow-x: hidden;
+        min-width: 100vw;
       }
-      .card {
-        background: var(--card-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 24px;
-        padding: 2.5rem 3.5rem;
-        text-align: center;
-        max-width: 420px;
-        width: 90%;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        animation: fadeIn 0.8s ease, cardGlow 10s infinite alternate ease-in-out;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      .glow-card {
+        box-shadow: 0 0 32px 8px #22c55e44, 0 2px 16px 0 #000a;
       }
-      .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(30px) scale(0.95);
+    </style>
+  </head>
+  <body
+    class="relative flex items-center justify-center h-screen w-screen overflow-hidden"
+  >
+    <div
+      class="absolute inset-0 -z-10 animate-gradient bg-gradient-to-br from-[#10141c] via-[#232b3a] to-[#3b82f6] opacity-100"
+    ></div>
+    <main
+      class="w-full max-w-lg mx-auto rounded-2xl glow-card bg-[#232b3a] p-6 sm:p-10 flex flex-col items-center justify-center border border-[#2e374d] shadow-2xl"
+      style="box-shadow: 0 0 32px 8px #22c55e44, 0 2px 16px 0 #000a"
+    >
+      <div class="flex items-center gap-3 mb-6">
+        <span
+          class="text-4xl font-extrabold text-[#5b7fff] tracking-wide drop-shadow-lg animate-pulse"
+          >TARS</span
+        >
+        <span
+          style="font-size: 2em"
+          class="h-11 w-11 text-[#5b7fff] drop-shadow-lg animate-bounce"
+          >🤖</span
+        >
+      </div>
+      <p class="text-center text-lg text-gray-200 mb-8 font-medium">
+        Your AI-powered Discord companion is
+        <span class="text-[#5b7fff] font-bold">online</span> and ready to assist
+        with <span class="text-green-400 font-bold">style</span> and
+        <span class="text-pink-400 font-bold">efficiency</span>.
+      </p>
+      <div
+        class="flex flex-col lg:flex-row items-center lg:items-center gap-4 lg:gap-8 mb-6 w-full justify-center"
+      >
+        <span class="flex items-center gap-2 lg:gap-3 lg:items-center">
+          <span id="statusDot" class="status-dot"></span>
+          <span class="status-label">Status:</span>
+          <span id="status" class="status-chip">Online</span>
+        </span>
+        <span class="flex items-center gap-2 lg:gap-3 lg:items-center">
+          <span class="status-label">Health:</span>
+          <span id="health" class="health">Excellent</span>
+        </span>
+      </div>
+      <span id="lastChecked" class="text-sm text-[#94a3b8] mb-2"
+        >Last checked: <span id="lastCheckedTime">--</span></span
+      >
+      <span class="text-xs text-[#94a3b8] mt-4"
+        >© 2025 TARS . All rights reserved.</span
+      >
+    </main>
+    <script>
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      function updateStatus() {
+        const statusEl = document.getElementById("status");
+        const healthEl = document.getElementById("health");
+        const lastCheckedEl = document.getElementById("lastCheckedTime");
+        const statusDot = document.getElementById("statusDot");
+        const isOnline = Math.random() > 0.1;
+        statusEl.textContent = isOnline ? "Online" : "Processing";
+        statusEl.className = isOnline
+          ? "status-chip"
+          : "status-chip bg-red-400 border-red-400 text-[#181f2a]";
+        healthEl.textContent = isOnline ? "Excellent" : "Poor";
+        healthEl.className = isOnline
+          ? "health bg-green-400 border-green-400 text-[#181f2a]"
+          : "health bg-yellow-400 border-yellow-400 text-[#181f2a]";
+        if (statusEl.textContent === "Online") {
+          statusDot.style.setProperty("--accent-color", "#22c55e");
+          statusDot.style.setProperty(
+            "--accent-shadow",
+            "rgba(34,197,94,0.15)"
+          );
+          statusDot.className = "status-dot";
+        } else {
+          statusDot.style.setProperty("--accent-color", "#ef4444");
+          statusDot.style.setProperty(
+            "--accent-shadow",
+            "rgba(239,68,68,0.15)"
+          );
+          statusDot.className = "status-dot";
         }
-        to {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
+        const now = new Date();
+        lastCheckedEl.textContent = now.toLocaleString();
       }
-      @keyframes cardGlow {
+      updateStatus();
+      setInterval(updateStatus, 10000);
+    </script>
+    <style>
+      .status-label {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #e0e7ef;
+      }
+      .status-chip {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.15);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        font-weight: 600;
+        font-size: 0.95em;
+        color: #e2e8f0;
+        transition: background 0.2s, border 0.2s, color 0.2s;
+      }
+      .health {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-weight: 600;
+        font-size: 0.95em;
+        color: #181f2a;
+        transition: background 0.2s, border 0.2s, color 0.2s;
+      }
+      @keyframes gradient {
         0% {
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
-            0 0 20px var(--secondary-color), 0 0 40px var(--secondary-color);
-          border-color: rgba(168, 85, 247, 0.8);
+          background-position: 0% 50%;
+          filter: brightness(1.05);
+        }
+        25% {
+          background-position: 50% 100%;
+          filter: brightness(1.15);
         }
         50% {
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
-            0 0 25px var(--primary-color), 0 0 50px var(--primary-color);
-          border-color: rgba(56, 189, 248, 1);
+          background-position: 100% 50%;
+          filter: brightness(1.05);
+        }
+        75% {
+          background-position: 50% 0%;
+          filter: brightness(1.15);
         }
         100% {
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
-            0 0 22px var(--accent-color), 0 0 45px var(--accent-color);
-          border-color: rgba(59, 130, 246, 0.9);
+          background-position: 0% 50%;
+          filter: brightness(1.05);
         }
       }
-      .bot-name {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.5em;
-        background: linear-gradient(
-          45deg,
-          var(--primary-color),
-          var(--secondary-color)
-        );
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      .desc {
-        font-size: 1.1rem;
-        color: var(--muted-text);
-        margin-bottom: 1.8em;
-        line-height: 1.6;
-      }
-      .status-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75em;
-        margin-bottom: 1.5em;
+      .animate-gradient {
+        background-size: 200% 200%;
+        animation: gradient 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
       .status-dot {
         position: relative;
@@ -297,6 +362,7 @@ app.get("/", (req, res) => {
         box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15),
           0 0 10px var(--accent-color);
         flex: 0 0 auto;
+        transition: background 0.2s;
       }
       .status-dot::after {
         content: "";
@@ -325,120 +391,16 @@ app.get("/", (req, res) => {
           opacity: 0;
         }
       }
-      .status-label {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: var(--text-color);
-      }
-      .status-chip {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        border-radius: 999px;
-        background: rgba(56, 189, 248, 0.15);
-        border: 1px solid rgba(56, 189, 248, 0.35);
-        font-weight: 600;
-        font-size: 0.95em;
-      }
-      .health {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        font-weight: 600;
-        font-size: 0.95em;
-      }
-      .health--excellent {
-        color: #16a34a;
-        background: rgba(22, 163, 74, 0.15);
-        border-color: rgba(22, 163, 74, 0.3);
-      }
-      .health--good {
-        color: #22c55e;
-        background: rgba(34, 197, 94, 0.15);
-        border-color: rgba(34, 197, 94, 0.3);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .card {
-          animation: none;
-        }
-        .status-dot::after {
-          animation: none;
-        }
-        * {
-          transition: none !important;
-        }
-      }
-      .footer {
-        font-size: 0.9rem;
-        color: #94a3b8;
-        margin-top: 1.2em;
-      }
-      @media (max-width: 600px) {
-        .card {
-          padding: 2rem 2.5rem;
-          max-width: 90%;
-        }
-        .bot-name {
-          font-size: 1.8rem;
-        }
-        .desc {
-          font-size: 1rem;
-        }
-        .status-label {
-          font-size: 1rem;
+      @media (max-width: 640px) {
+        main {
+          max-width: 95vw !important;
+          padding: 1.25rem !important;
         }
       }
     </style>
-  </head>
-  <body>
-    <div class="card">
-      <div class="bot-name">TARS <span style="font-size: 1.2em">🤖</span></div>
-      <div class="desc">
-        Your AI-powered Discord companion is online and ready to assist with
-        style and efficiency.
-      </div>
-      <div class="status-row" role="status" aria-live="polite">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="status-label">
-          Status: <span id="status-text" class="status-chip">Online</span>
-          • Health:
-          <span id="health-text" class="health health--excellent"
-            >Excellent</span
-          >
-        </span>
-      </div>
-      <div class="footer">Last checked: <span id="timestamp"></span></div>
-    </div>
-    <script>
-      function updateTimestamp() {
-        document.getElementById("timestamp").textContent =
-          new Date().toLocaleString();
-      }
-      updateTimestamp();
-      setInterval(updateTimestamp, 60000);
-
-      let statusIndex = 0;
-      const statusStates = ["Online", "Processing", "Online"];
-      const healthStates = [
-        { text: "Excellent", cls: "health--excellent" },
-        { text: "Good", cls: "health--good" },
-        { text: "Excellent", cls: "health--excellent" },
-      ];
-      const statusEl = document.getElementById("status-text");
-      const healthEl = document.getElementById("health-text");
-      function updateStatus() {
-        statusEl.textContent = statusStates[statusIndex];
-        const h = healthStates[statusIndex];
-        healthEl.textContent = h.text;
-        healthEl.className = 'health ' + h.cls;
-        statusIndex = (statusIndex + 1) % statusStates.length;
-      }
-      setInterval(updateStatus, 10000);
-    </script>
   </body>
 </html>
-
-  `);
+`);
 });
 
 app.listen(port, () => {
