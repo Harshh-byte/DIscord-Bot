@@ -1,11 +1,11 @@
 {
-  "name": "cohort",
+  "name": "tars-discord-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "TARS - A savage, witty Discord bot powered by Google's Gemini AI with chaotic humor and intelligent conversation",
   "main": "index.js",
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "keywords": ["discord", "bot", "ai", "gemini", "chatbot", "humor", "witty"],
+  "author": "Harshh-byte",
   "license": "ISC",
   "dependencies": {
     "@google/genai": "^1.19.0",
