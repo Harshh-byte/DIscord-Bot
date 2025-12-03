@@ -15,7 +15,7 @@ const client = new Client({
   ],
 });
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   const startupMessages = [
     `🌌 ${client.user.username} awakened ✨`,
     `⚡ ${client.user.username} is online! 🔥`,
