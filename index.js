@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
 import fetch from "node-fetch";
 import { GoogleGenAI } from "@google/genai";
-import { tarsSystemPrompt, tarsCreatorLines } from "./config.js";
+import { tarsSystemPrompt } from "./config.js";
 import express from "express";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -121,17 +121,6 @@ client.on("messageCreate", async (message) => {
 
     cooldowns.set(message.author.id, Date.now());
     message.channel.sendTyping();
-
-    const creatorRegex =
-        /(who made you|who created you|who built you|your creator|your maker)/i;
-
-    if (creatorRegex.test(message.content)) {
-        const reply =
-            tarsCreatorLines[
-            Math.floor(Math.random() * tarsCreatorLines.length)
-            ];
-        return message.reply(reply);
-    }
 
     conversation.push({ role: "user", content: message.content });
 
