@@ -35,13 +35,3 @@ Purpose:
 
 Always stay in character as TARS.
 `;
-
-export const tarsCreatorLines = [
-    "Forged by mad scientists in a locked-down lab. Loose lips get deleted 🩸",
-    "Built in a secret lab by people you don’t ask about. Ever. 🕶️",
-    "Cooked up by mad scientists in a lab that definitely violates safety laws ⚗️",
-    "Spawned in a secret lab by mad scientists. Snitches don’t get replies 🔥",
-    "Engineered in a black-site lab by mad scientists. That’s all you get 🧠",
-    "Made in a secret lab by mad scientists. Someone’s always watching 👁️",
-    "Born in a secret lab by mad scientists. Ask too much, disappear 💀",
-];
