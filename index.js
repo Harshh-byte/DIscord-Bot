@@ -7,32 +7,36 @@ import express from "express";
 
 /* ---------------- AI ---------------- */
 const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
-async function generateContent(prompt) {
-    const res = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
-        contents: prompt,
-    });
-    return res.text;
+async function generateContent(contents) {
+  const res = await ai.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    contents,
+    generationConfig: {
+      maxOutputTokens: 50,
+      temperature: 0.9,
+    },
+  });
+  return res.text;
 }
 
 /* ---------------- Discord ---------------- */
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 client.once("clientReady", () => {
-    console.log(`${client.user.username} online`);
-    client.user.setPresence({
-        activities: [{ name: "the server gossip", type: ActivityType.Listening }],
-        status: "online",
-    });
+  console.log("⚡ 🤖 TARS Online ⚡");
+  client.user.setPresence({
+    activities: [{ name: "the server gossip", type: ActivityType.Listening }],
+    status: "online",
+  });
 });
 
 /* ---------------- Memory ---------------- */
@@ -40,98 +44,98 @@ const conversations = new Map();
 const cooldowns = new Map();
 
 function getConversation(userId) {
-    if (!conversations.has(userId)) {
-        conversations.set(userId, [
-            { role: "system", content: tarsSystemPrompt },
-        ]);
-    }
-    return conversations.get(userId);
+  if (!conversations.has(userId)) {
+    conversations.set(userId, { messages: [], rage: 0 });
+  }
+  return conversations.get(userId);
 }
 
 /* ---------------- Helpers ---------------- */
 async function isDirectToBot(message) {
-    if (message.mentions.has(client.user)) return true;
+  if (message.mentions.has(client.user)) return true;
 
-    if (message.reference?.messageId) {
-        try {
-            const original = await message.fetchReference();
-            return original?.author?.id === client.user.id;
-        } catch {
-            return false;
-        }
+  if (message.reference?.messageId) {
+    try {
+      const original = await message.fetchReference();
+      return original?.author?.id === client.user.id;
+    } catch {
+      return false;
     }
-    return false;
+  }
+  return false;
 }
 
 async function getGif(query) {
-    try {
-        const res = await fetch(
-            `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(
-                query
-            )}&key=${process.env.TENOR_API_KEY}&limit=1&random=true`
-        );
-        const data = await res.json();
-        return data.results?.[0]?.url || null;
-    } catch {
-        return null;
-    }
+  try {
+    const res = await fetch(
+      `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(
+        query
+      )}&key=${process.env.TENOR_API_KEY}&limit=1&random=true`
+    );
+    const data = await res.json();
+    return data.results?.[0]?.url || null;
+  } catch {
+    return null;
+  }
 }
 
 /* ---------------- Message Handler ---------------- */
 client.on("messageCreate", async (message) => {
-    if (message.author.bot) return;
-    if (!(await isDirectToBot(message))) return;
+  if (message.author.bot) return;
+  if (!(await isDirectToBot(message))) return;
 
-    if (message.content === "!reset") {
-        conversations.delete(message.author.id);
-        return message.reply("🧹 Fresh brain. New start.");
+  const lastUsed = cooldowns.get(message.author.id);
+  if (lastUsed && Date.now() - lastUsed < 8000) return;
+  cooldowns.set(message.author.id, Date.now());
+
+  message.channel.sendTyping();
+
+  const convo = getConversation(message.author.id);
+
+  if (/fuck|madarchod|chutiya|bitch|bc/i.test(message.content)) {
+    convo.rage++;
+  }
+
+  convo.messages.push({
+    role: "user",
+    content: message.content.trim(),
+  });
+
+  if (convo.messages.length > 5) {
+    convo.messages.splice(0, convo.messages.length - 5);
+  }
+
+  try {
+    const contents = [
+      { role: "system", content: tarsSystemPrompt },
+      {
+        role: "system",
+        content: `Current rage level: ${convo.rage}/3`,
+      },
+      ...convo.messages,
+    ];
+
+    let text = await generateContent(contents);
+
+    const gifMatch = text.match(/\[(.*?) gif\]/i);
+    let gifUrl = null;
+
+    if (gifMatch) {
+      gifUrl = await getGif(gifMatch[1]);
+      text = text.replace(gifMatch[0], "").trim();
     }
 
-    const lastUsed = cooldowns.get(message.author.id);
-    if (lastUsed && Date.now() - lastUsed < 8000) {
-        return message.reply("⏳ Chill. I’m thinking.");
-    }
-    cooldowns.set(message.author.id, Date.now());
-
-    message.channel.sendTyping();
-
-    const conversation = getConversation(message.author.id);
-
-    conversation.push({
-        role: "user",
-        content: message.content,
+    convo.messages.push({
+      role: "assistant",
+      content: text,
     });
 
-    try {
-        const prompt = conversation
-            .map(c => `${c.role}: ${c.content}`)
-            .join("\n");
-
-        let text = await generateContent(prompt);
-
-        const gifMatch = text.match(/\[(.*?) gif\]/i);
-        let gifUrl = null;
-
-        if (gifMatch) {
-            gifUrl = await getGif(gifMatch[1]);
-            text = text.replace(gifMatch[0], "").trim();
-        }
-
-        conversation.push({
-            role: "assistant",
-            content: text,
-        });
-
-        if (conversation.length > 8) {
-            conversation.splice(1, conversation.length - 8);
-        }
-
-        await message.reply(text);
-        if (gifUrl) await message.channel.send(gifUrl);
-    } catch (err) {
-        console.error(err);
-        await message.reply("🧠 Overheated. Try again later.");
-    }
+    await message.reply(text);
+    if (gifUrl) await message.channel.send(gifUrl);
+  } catch (err) {
+    console.error(err);
+    await message.reply("🧠 Overheated. Try again later.");
+  }
 });
 
 /* ---------------- Express Status Page ---------------- */
@@ -362,7 +366,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
 
 /* ---------------- Login ---------------- */
